@@ -19,10 +19,7 @@ init : (Model, Cmd Msg)
 init =
   (initialModel, Cmd.none)
 
-
-type Value = VInt Int
-           | VNothing
-
+type alias Value = Maybe Int
 
 type Instruction = Inbox
                  | Outbox
@@ -30,16 +27,16 @@ type Instruction = Inbox
 -- MODEL
 
 type alias MachineState =
-  { complete : Bool
-  , inHands  : Value
-  , input    : List Value
-  , output   : List Value
-  , pc       : Int
-  }
+    { complete : Bool
+    , held     : Value
+    , input    : List Value
+    , output   : List Value
+    , pc       : Int
+    }
 
 type alias Model =
     { program : Array Instruction
-    , state  : MachineState
+    , state   : MachineState
     }
 
 
@@ -47,7 +44,7 @@ initialModel : Model
 initialModel =
   { program  = program
   , state = { complete = False
-            , inHands  = VNothing
+            , held     = Nothing
             , input    = input
             , output   = []
             , pc       = 0
@@ -68,9 +65,9 @@ program =
 
 
 input : List Value
-input = [ VInt 2
-        , VInt 7
-        , VInt 8
+input = [ Just 2
+        , Just 7
+        , Just 8
         ]
 
 
@@ -103,7 +100,7 @@ shiftInboxToHands model =
                 Nothing -> []
   in case first of
        Just val ->
-           updateState model (\s-> { s | inHands = val, input = rest})
+           updateState model (\s-> { s | held = val, input = rest})
        Nothing -> updateState model (\s-> {s | complete = True })
 
 
@@ -116,11 +113,11 @@ complete state = { state | complete = True }
 shiftHandsToOutbox : Model -> Model
 shiftHandsToOutbox model =
   let currentState = model.state
-  in case model.state.inHands of
-    VNothing -> updateState model complete
-    val      -> { model | state =
+  in case model.state.held of
+    Nothing -> updateState model complete
+    val     -> { model | state =
                      { currentState
-                         | inHands = VNothing,
+                         | held = Nothing,
                            output  = (val :: currentState.output)
                      }}
 
