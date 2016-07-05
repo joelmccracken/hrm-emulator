@@ -7254,8 +7254,8 @@ var _user$project$Main$currentInstruction = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 138, column: 3},
-					end: {line: 140, column: 87}
+					start: {line: 136, column: 3},
+					end: {line: 138, column: 87}
 				},
 				_p0)('you\'re trying to access an instruction that doesn\'t exist');
 		}
@@ -7306,7 +7306,7 @@ var _user$project$Main$shiftInboxToHands = function (model) {
 			function (s) {
 				return _elm_lang$core$Native_Utils.update(
 					s,
-					{inHands: _p3._0, input: rest});
+					{held: _p3._0, input: rest});
 			});
 	} else {
 		return A2(
@@ -7319,19 +7319,10 @@ var _user$project$Main$shiftInboxToHands = function (model) {
 			});
 	}
 };
-var _user$project$Main$MachineState = F5(
-	function (a, b, c, d, e) {
-		return {complete: a, inHands: b, input: c, output: d, pc: e};
-	});
-var _user$project$Main$Model = F2(
-	function (a, b) {
-		return {program: a, state: b};
-	});
-var _user$project$Main$VNothing = {ctor: 'VNothing'};
 var _user$project$Main$shiftHandsToOutbox = function (model) {
 	var currentState = model.state;
-	var _p4 = model.state.inHands;
-	if (_p4.ctor === 'VNothing') {
+	var _p4 = model.state.held;
+	if (_p4.ctor === 'Nothing') {
 		return A2(_user$project$Main$updateState, model, _user$project$Main$complete);
 	} else {
 		return _elm_lang$core$Native_Utils.update(
@@ -7340,7 +7331,7 @@ var _user$project$Main$shiftHandsToOutbox = function (model) {
 				state: _elm_lang$core$Native_Utils.update(
 					currentState,
 					{
-						inHands: _user$project$Main$VNothing,
+						held: _elm_lang$core$Maybe$Nothing,
 						output: A2(_elm_lang$core$List_ops['::'], _p4, currentState.output)
 					})
 			});
@@ -7374,15 +7365,20 @@ var _user$project$Main$update = F2(
 			};
 		}
 	});
-var _user$project$Main$VInt = function (a) {
-	return {ctor: 'VInt', _0: a};
-};
 var _user$project$Main$input = _elm_lang$core$Native_List.fromArray(
 	[
-		_user$project$Main$VInt(2),
-		_user$project$Main$VInt(7),
-		_user$project$Main$VInt(8)
+		_elm_lang$core$Maybe$Just(2),
+		_elm_lang$core$Maybe$Just(7),
+		_elm_lang$core$Maybe$Just(8)
 	]);
+var _user$project$Main$MachineState = F5(
+	function (a, b, c, d, e) {
+		return {complete: a, held: b, input: c, output: d, pc: e};
+	});
+var _user$project$Main$Model = F2(
+	function (a, b) {
+		return {program: a, state: b};
+	});
 var _user$project$Main$Outbox = {ctor: 'Outbox'};
 var _user$project$Main$Inbox = {ctor: 'Inbox'};
 var _user$project$Main$program = _elm_lang$core$Array$fromList(
@@ -7392,7 +7388,7 @@ var _user$project$Main$initialModel = {
 	program: _user$project$Main$program,
 	state: {
 		complete: false,
-		inHands: _user$project$Main$VNothing,
+		held: _elm_lang$core$Maybe$Nothing,
 		input: _user$project$Main$input,
 		output: _elm_lang$core$Native_List.fromArray(
 			[]),

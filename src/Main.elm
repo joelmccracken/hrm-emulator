@@ -19,20 +19,27 @@ init : (Model, Cmd Msg)
 init =
   (initialModel, Cmd.none)
 
-type alias Value = Maybe Int
+
+type alias Value = Int
+
 
 type Instruction = Inbox
                  | Outbox
 
+type Status = Running | Complete | Error String
+
 -- MODEL
 
 type alias MachineState =
-    { complete : Bool
-    , held     : Value
+    { status   : Status
+    , held     : Maybe Value
     , input    : List Value
     , output   : List Value
     , pc       : Int
     }
+
+
+
 
 type alias Model =
     { program : Array Instruction
@@ -43,11 +50,11 @@ type alias Model =
 initialModel : Model
 initialModel =
   { program  = program
-  , state = { complete = False
-            , held     = Nothing
-            , input    = input
-            , output   = []
-            , pc       = 0
+  , state = { status = Running
+            , held   = Nothing
+            , input  = input
+            , output = []
+            , pc     = 0
             }
   }
 
@@ -65,9 +72,9 @@ program =
 
 
 input : List Value
-input = [ Just 2
-        , Just 7
-        , Just 8
+input = [ 2
+        , 7
+        , 8
         ]
 
 
@@ -101,13 +108,13 @@ shiftInboxToHands model =
   in case first of
        Just val ->
            updateState model (\s-> { s | held = val, input = rest})
-       Nothing -> updateState model (\s-> {s | complete = True })
+       Nothing -> updateState model (\s-> {s | status = Error "tried to pick up an item from the inbox, but inbox was empty" })
 
 
 -- state manipulators
 
 complete : MachineState -> MachineState
-complete state = { state | complete = True }
+complete state = { state | status = Complete }
 
 
 shiftHandsToOutbox : Model -> Model
