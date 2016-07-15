@@ -26,7 +26,9 @@ type alias Value = Int
 type Instruction = Inbox
                  | Outbox
 
+
 type Status = Running | Complete | Error String
+
 
 -- MODEL
 
@@ -39,8 +41,6 @@ type alias MachineState =
     }
 
 
-
-
 type alias Model =
     { program : Array Instruction
     , state   : MachineState
@@ -49,7 +49,7 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-  { program  = program
+  { program  = Array.fromList program
   , state = { status = Running
             , held   = Nothing
             , input  = input
@@ -59,16 +59,15 @@ initialModel =
   }
 
 
-program : Array Instruction
+program : List Instruction
 program =
-  Array.fromList
-         [ Inbox
-         , Outbox
-         , Inbox
-         , Outbox
-         , Inbox
-         , Outbox
-         ]
+    [ Inbox
+    , Outbox
+    , Inbox
+    , Outbox
+    , Inbox
+    , Outbox
+    ]
 
 
 input : List Value
@@ -107,7 +106,7 @@ shiftInboxToHands model =
                 Nothing -> []
   in case first of
        Just val ->
-           updateState model (\s-> { s | held = val, input = rest})
+           updateState model (\s-> { s | held = Just val, input = rest})
        Nothing -> updateState model (\s-> {s | status = Error "tried to pick up an item from the inbox, but inbox was empty" })
 
 
@@ -121,8 +120,8 @@ shiftHandsToOutbox : Model -> Model
 shiftHandsToOutbox model =
   let currentState = model.state
   in case model.state.held of
-    Nothing -> updateState model complete
-    val     -> { model | state =
+    Nothing  -> updateState model complete
+    Just val -> { model | state =
                      { currentState
                          | held = Nothing,
                            output  = (val :: currentState.output)
@@ -156,11 +155,11 @@ update action model =
   case action of
     Tick newTime ->
         let
-            isComplete = model.state.complete
+            isComplete = model.state.status
         in
             case isComplete of
-                True  -> (model, Cmd.none)
-                False -> (stepModel model, Cmd.none)
+                Running    -> (stepModel model, Cmd.none)
+                _  -> (model, Cmd.none)
 
 
 -- VIEW
