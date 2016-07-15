@@ -7254,17 +7254,12 @@ var _user$project$Main$currentInstruction = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 136, column: 3},
-					end: {line: 138, column: 87}
+					start: {line: 142, column: 3},
+					end: {line: 144, column: 87}
 				},
 				_p0)('you\'re trying to access an instruction that doesn\'t exist');
 		}
 	});
-var _user$project$Main$complete = function (state) {
-	return _elm_lang$core$Native_Utils.update(
-		state,
-		{complete: true});
-};
 var _user$project$Main$updateState = F2(
 	function (model, updater) {
 		var newState = updater(model.state);
@@ -7282,10 +7277,22 @@ var _user$project$Main$stepPC = function (model) {
 				{pc: s.pc + 1});
 		});
 };
-var _user$project$Main$completeIfFinished = function (model) {
-	var pc = model.state.pc;
-	var programLength = _elm_lang$core$Array$length(model.program);
-	return (_elm_lang$core$Native_Utils.cmp(pc, programLength) < 0) ? model : A2(_user$project$Main$updateState, model, _user$project$Main$complete);
+var _user$project$Main$input = _elm_lang$core$Native_List.fromArray(
+	[2, 7, 8]);
+var _user$project$Main$MachineState = F5(
+	function (a, b, c, d, e) {
+		return {status: a, held: b, input: c, output: d, pc: e};
+	});
+var _user$project$Main$Model = F2(
+	function (a, b) {
+		return {program: a, state: b};
+	});
+var _user$project$Main$Outbox = {ctor: 'Outbox'};
+var _user$project$Main$Inbox = {ctor: 'Inbox'};
+var _user$project$Main$program = _elm_lang$core$Native_List.fromArray(
+	[_user$project$Main$Inbox, _user$project$Main$Outbox, _user$project$Main$Inbox, _user$project$Main$Outbox, _user$project$Main$Inbox, _user$project$Main$Outbox]);
+var _user$project$Main$Error = function (a) {
+	return {ctor: 'Error', _0: a};
 };
 var _user$project$Main$shiftInboxToHands = function (model) {
 	var rest = function () {
@@ -7306,7 +7313,10 @@ var _user$project$Main$shiftInboxToHands = function (model) {
 			function (s) {
 				return _elm_lang$core$Native_Utils.update(
 					s,
-					{held: _p3._0, input: rest});
+					{
+						held: _elm_lang$core$Maybe$Just(_p3._0),
+						input: rest
+					});
 			});
 	} else {
 		return A2(
@@ -7315,9 +7325,22 @@ var _user$project$Main$shiftInboxToHands = function (model) {
 			function (s) {
 				return _elm_lang$core$Native_Utils.update(
 					s,
-					{complete: true});
+					{
+						status: _user$project$Main$Error('tried to pick up an item from the inbox, but inbox was empty')
+					});
 			});
 	}
+};
+var _user$project$Main$Complete = {ctor: 'Complete'};
+var _user$project$Main$complete = function (state) {
+	return _elm_lang$core$Native_Utils.update(
+		state,
+		{status: _user$project$Main$Complete});
+};
+var _user$project$Main$completeIfFinished = function (model) {
+	var pc = model.state.pc;
+	var programLength = _elm_lang$core$Array$length(model.program);
+	return (_elm_lang$core$Native_Utils.cmp(pc, programLength) < 0) ? model : A2(_user$project$Main$updateState, model, _user$project$Main$complete);
 };
 var _user$project$Main$shiftHandsToOutbox = function (model) {
 	var currentState = model.state;
@@ -7332,7 +7355,7 @@ var _user$project$Main$shiftHandsToOutbox = function (model) {
 					currentState,
 					{
 						held: _elm_lang$core$Maybe$Nothing,
-						output: A2(_elm_lang$core$List_ops['::'], _p4, currentState.output)
+						output: A2(_elm_lang$core$List_ops['::'], _p4._0, currentState.output)
 					})
 			});
 	}
@@ -7353,41 +7376,23 @@ var _user$project$Main$stepModel = function (model) {
 var _user$project$Main$update = F2(
 	function (action, model) {
 		var _p6 = action;
-		var isComplete = model.state.complete;
+		var isComplete = model.state.status;
 		var _p7 = isComplete;
-		if (_p7 === true) {
-			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-		} else {
+		if (_p7.ctor === 'Running') {
 			return {
 				ctor: '_Tuple2',
 				_0: _user$project$Main$stepModel(model),
 				_1: _elm_lang$core$Platform_Cmd$none
 			};
+		} else {
+			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 		}
 	});
-var _user$project$Main$input = _elm_lang$core$Native_List.fromArray(
-	[
-		_elm_lang$core$Maybe$Just(2),
-		_elm_lang$core$Maybe$Just(7),
-		_elm_lang$core$Maybe$Just(8)
-	]);
-var _user$project$Main$MachineState = F5(
-	function (a, b, c, d, e) {
-		return {complete: a, held: b, input: c, output: d, pc: e};
-	});
-var _user$project$Main$Model = F2(
-	function (a, b) {
-		return {program: a, state: b};
-	});
-var _user$project$Main$Outbox = {ctor: 'Outbox'};
-var _user$project$Main$Inbox = {ctor: 'Inbox'};
-var _user$project$Main$program = _elm_lang$core$Array$fromList(
-	_elm_lang$core$Native_List.fromArray(
-		[_user$project$Main$Inbox, _user$project$Main$Outbox, _user$project$Main$Inbox, _user$project$Main$Outbox, _user$project$Main$Inbox, _user$project$Main$Outbox]));
+var _user$project$Main$Running = {ctor: 'Running'};
 var _user$project$Main$initialModel = {
-	program: _user$project$Main$program,
+	program: _elm_lang$core$Array$fromList(_user$project$Main$program),
 	state: {
-		complete: false,
+		status: _user$project$Main$Running,
 		held: _elm_lang$core$Maybe$Nothing,
 		input: _user$project$Main$input,
 		output: _elm_lang$core$Native_List.fromArray(
