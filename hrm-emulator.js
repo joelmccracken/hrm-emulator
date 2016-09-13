@@ -7247,18 +7247,13 @@ var _user$project$Main$view = function (model) {
 };
 var _user$project$Main$currentInstruction = F2(
 	function (instructions, pc) {
-		var _p0 = A2(_elm_lang$core$Array$get, pc, instructions);
-		if (_p0.ctor === 'Just') {
-			return _p0._0;
-		} else {
-			return _elm_lang$core$Native_Utils.crashCase(
-				'Main',
-				{
-					start: {line: 142, column: 3},
-					end: {line: 144, column: 87}
-				},
-				_p0)('you\'re trying to access an instruction that doesn\'t exist');
-		}
+		return A2(
+			_elm_lang$core$Result$fromMaybe,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'No Instrution at',
+				_elm_lang$core$Basics$toString(pc)),
+			A2(_elm_lang$core$Array$get, pc, instructions));
 	});
 var _user$project$Main$updateState = F2(
 	function (model, updater) {
@@ -7296,17 +7291,17 @@ var _user$project$Main$Error = function (a) {
 };
 var _user$project$Main$shiftInboxToHands = function (model) {
 	var rest = function () {
-		var _p2 = _elm_lang$core$List$tail(model.state.input);
-		if (_p2.ctor === 'Just') {
-			return _p2._0;
+		var _p0 = _elm_lang$core$List$tail(model.state.input);
+		if (_p0.ctor === 'Just') {
+			return _p0._0;
 		} else {
 			return _elm_lang$core$Native_List.fromArray(
 				[]);
 		}
 	}();
 	var first = _elm_lang$core$List$head(model.state.input);
-	var _p3 = first;
-	if (_p3.ctor === 'Just') {
+	var _p1 = first;
+	if (_p1.ctor === 'Just') {
 		return A2(
 			_user$project$Main$updateState,
 			model,
@@ -7314,7 +7309,7 @@ var _user$project$Main$shiftInboxToHands = function (model) {
 				return _elm_lang$core$Native_Utils.update(
 					s,
 					{
-						held: _elm_lang$core$Maybe$Just(_p3._0),
+						held: _elm_lang$core$Maybe$Just(_p1._0),
 						input: rest
 					});
 			});
@@ -7331,6 +7326,24 @@ var _user$project$Main$shiftInboxToHands = function (model) {
 			});
 	}
 };
+var _user$project$Main$resultToState = F2(
+	function (originalModel, result) {
+		var _p2 = result;
+		if (_p2.ctor === 'Err') {
+			return A2(
+				_user$project$Main$updateState,
+				originalModel,
+				function (s) {
+					return _elm_lang$core$Native_Utils.update(
+						s,
+						{
+							status: _user$project$Main$Error(_p2._0)
+						});
+				});
+		} else {
+			return _p2._0;
+		}
+	});
 var _user$project$Main$Complete = {ctor: 'Complete'};
 var _user$project$Main$complete = function (state) {
 	return _elm_lang$core$Native_Utils.update(
@@ -7344,8 +7357,8 @@ var _user$project$Main$completeIfFinished = function (model) {
 };
 var _user$project$Main$shiftHandsToOutbox = function (model) {
 	var currentState = model.state;
-	var _p4 = model.state.held;
-	if (_p4.ctor === 'Nothing') {
+	var _p3 = model.state.held;
+	if (_p3.ctor === 'Nothing') {
 		return A2(_user$project$Main$updateState, model, _user$project$Main$complete);
 	} else {
 		return _elm_lang$core$Native_Utils.update(
@@ -7355,30 +7368,42 @@ var _user$project$Main$shiftHandsToOutbox = function (model) {
 					currentState,
 					{
 						held: _elm_lang$core$Maybe$Nothing,
-						output: A2(_elm_lang$core$List_ops['::'], _p4._0, currentState.output)
+						output: A2(_elm_lang$core$List_ops['::'], _p3._0, currentState.output)
 					})
 			});
 	}
 };
+var _user$project$Main$processInstruction = F2(
+	function (instruction, model) {
+		var _p4 = instruction;
+		if (_p4.ctor === 'Inbox') {
+			return _user$project$Main$completeIfFinished(
+				_user$project$Main$stepPC(
+					_user$project$Main$shiftInboxToHands(model)));
+		} else {
+			return _user$project$Main$completeIfFinished(
+				_user$project$Main$stepPC(
+					_user$project$Main$shiftHandsToOutbox(model)));
+		}
+	});
 var _user$project$Main$stepModel = function (model) {
-	var curr = A2(_user$project$Main$currentInstruction, model.program, model.state.pc);
-	var _p5 = curr;
-	if (_p5.ctor === 'Inbox') {
-		return _user$project$Main$completeIfFinished(
-			_user$project$Main$stepPC(
-				_user$project$Main$shiftInboxToHands(model)));
-	} else {
-		return _user$project$Main$completeIfFinished(
-			_user$project$Main$stepPC(
-				_user$project$Main$shiftHandsToOutbox(model)));
-	}
+	return A2(
+		_user$project$Main$resultToState,
+		model,
+		A2(
+			_elm_lang$core$Result$andThen,
+			A2(_user$project$Main$currentInstruction, model.program, model.state.pc),
+			function (instruction) {
+				return _elm_lang$core$Result$Ok(
+					A2(_user$project$Main$processInstruction, instruction, model));
+			}));
 };
 var _user$project$Main$update = F2(
 	function (action, model) {
-		var _p6 = action;
+		var _p5 = action;
 		var isComplete = model.state.status;
-		var _p7 = isComplete;
-		if (_p7.ctor === 'Running') {
+		var _p6 = isComplete;
+		if (_p6.ctor === 'Running') {
 			return {
 				ctor: '_Tuple2',
 				_0: _user$project$Main$stepModel(model),

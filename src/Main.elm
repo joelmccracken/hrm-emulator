@@ -2,8 +2,8 @@ import Html exposing (Html, div, text)
 import Html.App as Html
 import Time exposing (Time, second)
 import Array exposing (Array)
-import Debug
-
+import Maybe exposing (andThen)
+import Result exposing (fromMaybe, andThen)
 
 main : Program Never
 main =
@@ -123,25 +123,38 @@ shiftHandsToOutbox model =
     Nothing  -> updateState model complete
     Just val -> { model | state =
                      { currentState
-                         | held = Nothing,
-                           output  = (val :: currentState.output)
+                         | held   = Nothing,
+                           output = (val :: currentState.output)
                      }}
+
+
+currentInstruction : Array Instruction -> Int -> Result String Instruction
+currentInstruction instructions pc =
+    (Array.get pc instructions)
+      |> fromMaybe ("No Instrution at" ++ (toString pc))
+
 
 stepModel : Model -> Model
 stepModel model =
-  let curr = currentInstruction model.program model.state.pc
-  in case curr of
-    Inbox ->
+  currentInstruction model.program model.state.pc
+    `Result.andThen` (\instruction -> Ok (processInstruction instruction model))
+    |> resultToState model
+
+
+resultToState : Model -> Result String Model -> Model
+resultToState originalModel result =
+  case result of
+    Err string -> updateState originalModel (\s-> { s | status = Error string })
+    Ok  model ->  model
+
+
+processInstruction : Instruction -> Model -> Model
+processInstruction instruction model =
+  case instruction of
+    Inbox  ->
       shiftInboxToHands model |> stepPC |> completeIfFinished
     Outbox ->
       shiftHandsToOutbox model |> stepPC |> completeIfFinished
-
-
-currentInstruction : Array Instruction -> Int -> Instruction
-currentInstruction instructions pc =
-  case (Array.get pc instructions) of
-    Just a  -> a
-    Nothing -> Debug.crash "you're trying to access an instruction that doesn't exist"
 
 
 -- UPDATE
@@ -154,12 +167,12 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
     Tick newTime ->
-        let
-            isComplete = model.state.status
-        in
-            case isComplete of
-                Running    -> (stepModel model, Cmd.none)
-                _  -> (model, Cmd.none)
+      let
+        isComplete = model.state.status
+      in
+        case isComplete of
+          Running -> (stepModel model, Cmd.none)
+          _       -> (model, Cmd.none)
 
 
 -- VIEW
